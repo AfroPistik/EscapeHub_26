@@ -9,6 +9,20 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: escapehub
+          POSTGRES_USER: escapehub
+          POSTGRES_PASSWORD: escapehub_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U escapehub"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3

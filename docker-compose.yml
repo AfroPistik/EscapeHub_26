@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: escapehub-db
+    environment:
+      POSTGRES_DB: escapehub
+      POSTGRES_USER: escapehub
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-escapehub_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - escapehub-data:/var/lib/postgresql/data
+
+volumes:
+  escapehub-data:
