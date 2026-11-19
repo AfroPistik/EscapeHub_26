@@ -36,3 +36,5 @@ jobs:
 
     - name: Build and Test
       run: mvn -B clean verify
+    - name: Create test database
+      run: PGPASSWORD=escapehub_dev psql -h localhost -U escapehub -d escapehub -c "CREATE DATABASE escapehub_test"
