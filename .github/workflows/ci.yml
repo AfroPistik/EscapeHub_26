@@ -38,10 +38,10 @@ jobs:
     - name: Build and Test
     
       run: mvn -B clean verify
- ci/13-static-analysis
+ 
 
     - name: Run Static Analysi
       run: mvn spotbugs:check
     - name: Create test database
       run: PGPASSWORD=escapehub_dev psql -h localhost -U escapehub -d escapehub -c "CREATE DATABASE escapehub_test"
- master
+ 
