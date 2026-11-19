@@ -87,21 +87,27 @@
         </dependency>
     </dependencies>
 
-    <build>
+       <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                     <plugin>
-    <groupId>com.github.spotbugs</groupId>
-    <artifactId>spotbugs-maven-plugin</artifactId>
-    <version>4.10.2.0</version>
-</plugin>
                 <executions>
                     <execution>
                         <goals>
                             <goal>build-info</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.10.2.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
                     </execution>
                 </executions>
             </plugin>
