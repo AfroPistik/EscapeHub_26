@@ -1,3 +1,4 @@
+
 package com.team.common.error;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -11,11 +12,21 @@ public record ErrorResponse(
         Instant timestamp,
         Map<String, String> fieldErrors) {
 
+    public ErrorResponse {
+        fieldErrors = fieldErrors == null
+                ? null
+                : Map.copyOf(fieldErrors);
+    }
+
     public static ErrorResponse of(ErrorCode code, String message) {
         return new ErrorResponse(code, message, Instant.now(), null);
     }
 
-    public static ErrorResponse withFields(ErrorCode code, String message, Map<String, String> fieldErrors) {
+    public static ErrorResponse withFields(
+            ErrorCode code,
+            String message,
+            Map<String, String> fieldErrors) {
+
         return new ErrorResponse(code, message, Instant.now(), fieldErrors);
     }
 }
