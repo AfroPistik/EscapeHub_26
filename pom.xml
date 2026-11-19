@@ -108,9 +108,3 @@
         </plugins>
     </build>
 </project>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-</project>
