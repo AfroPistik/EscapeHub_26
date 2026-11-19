@@ -16,3 +16,4 @@ CREATE TABLE team_members (
 );
 
 CREATE INDEX idx_team_members_user_id ON team_members (user_id);
+CREATE UNIQUE INDEX uq_team_members_one_owner ON team_members (team_id) WHERE role = 'OWNER';
