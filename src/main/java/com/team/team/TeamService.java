@@ -5,6 +5,10 @@ import com.team.user.User;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import com.team.common.error.ErrorCode;
+import com.team.common.error.ForbiddenException;
+import com.team.common.error.NotFoundException;
 
 @Service
 public class TeamService {
@@ -42,6 +46,27 @@ public class TeamService {
         teamMemberRepository.save(ownerMembership);
 
         return TeamResponse.from(savedTeam);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyTeamResponse> getMyTeams() {
+        Long userId = currentUserService.getCurrentUser().getId();
+        return teamMemberRepository.findByUserId(userId).stream()
+                .map(MyTeamResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TeamResponse getTeam(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TEAM_NOT_FOUND, "Team not found"));
+
+        Long userId = currentUserService.getCurrentUser().getId();
+        if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
+            throw new ForbiddenException(ErrorCode.NOT_A_MEMBER, "You are not a member of this team");
+        }
+
+        return TeamResponse.from(team);
     }
 
     private Team saveTeamWithUniqueInviteCode(String name) {
