@@ -58,6 +58,7 @@ class TeamServiceTest {
         currentUser = mock(User.class);
         lenient().when(currentUser.getId()).thenReturn(7L);
         lenient().when(currentUserService.getCurrentUser()).thenReturn(currentUser);
+        lenient().when(currentUserService.getCurrentUserId()).thenReturn(7L);
     }
 
     @Test
