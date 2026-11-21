@@ -8,4 +8,9 @@ public record CreateTeamRequest(
         @Size(min = 3, max = 50, message = "Team name must be between 3 and 50 characters")
         String name
 ) {
+        public CreateTeamRequest {
+                if (name != null) {
+                        name = name.trim();
+                }
+        }
 }
