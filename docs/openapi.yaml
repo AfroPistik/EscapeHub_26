@@ -73,20 +73,6 @@ components:
         inviteCode:
           type: string
 
-    TeamMemberResponse:
-      type: object
-      properties:
-        userId:
-          type: integer
-          format: int64
-        username:
-          type: string
-        role:
-          type: string
-          enum:
-            - OWNER
-            - MEMBER
-
     TeamResponse:
       type: object
       properties:
