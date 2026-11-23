@@ -83,12 +83,19 @@ class MembershipServiceLeaveTest {
     void leave_throwsForbidden_whenUserIsNotMember() {
         Long teamId = 10L;
         User outsider = mock(User.class);
+        when(outsider.getId()).thenReturn(3L);
 
-        
+        User otherUser = mock(User.class);
+        when(otherUser.getId()).thenReturn(2L);
+
+        TeamMember otherMember = mock(TeamMember.class);
+        when(otherMember.getUser()).thenReturn(otherUser);
+
         when(teamRepository.existsById(teamId)).thenReturn(true);
         when(currentUserService.getCurrentUser()).thenReturn(outsider);
-        when(teamMemberRepository.findByTeamId(teamId)).thenReturn(List.of());
+        when(teamMemberRepository.findByTeamId(teamId)).thenReturn(List.of(otherMember));
 
         assertThrows(ForbiddenException.class, () -> membershipService.leave(teamId));
     }
-}
+
+    
