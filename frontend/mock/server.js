@@ -6,7 +6,7 @@ app.use(express.json())
 const users = []
 let current = null // ένας "συνδεδεμένος" χρήστης αρκεί για το mock
 
-const fail = (res, status, code, message, fieldErrors = []) =>
+const fail = (res, status, code, message, fieldErrors = {}) =>
     res.status(status).json({ code, message, timestamp: new Date().toISOString(), fieldErrors })
 
 app.post('/api/auth/register', (req, res) => {

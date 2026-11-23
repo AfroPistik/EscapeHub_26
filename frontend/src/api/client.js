@@ -3,8 +3,7 @@ export class ApiError extends Error {
         super(body?.message || 'Κάτι πήγε στραβά')
         this.status = status
         this.code = body?.code
-        this.fieldErrors = body?.fieldErrors || []
-    }
+        this.fieldErrors = body?.fieldErrors || {}    }
 }
 
 let onUnauthorized = () => {}

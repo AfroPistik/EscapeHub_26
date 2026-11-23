@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
-import { validateRegister, fieldErrorsToObject } from '../auth/validation'
+import { validateRegister } from '../auth/validation'
 
 export default function RegisterPage() {
     const { register } = useAuth()
@@ -22,7 +22,7 @@ export default function RegisterPage() {
             await register(form)
             navigate('/login', { state: { registered: true } })
         } catch (err) {
-            if (err.status === 400) setErrors(fieldErrorsToObject(err.fieldErrors))
+            if (err.status === 400) setErrors(err.fieldErrors)
             else if (err.code === 'EMAIL_TAKEN') setErrors({ email: err.message })
             else if (err.code === 'USERNAME_TAKEN') setErrors({ username: err.message })
             else setGeneral(err.message)
