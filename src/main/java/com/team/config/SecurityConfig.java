@@ -15,7 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 @Configuration
 public class SecurityConfig {
 
@@ -42,7 +43,10 @@ public class SecurityConfig {
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
     // 401 στην κοινή μορφή σφάλματος (ErrorResponse). Το GlobalExceptionHandler δεν φτάνει
     // εδώ, γιατί το σφάλμα προκύπτει μέσα στα φίλτρα ασφαλείας.
     private AuthenticationEntryPoint unauthorizedEntryPoint() {
