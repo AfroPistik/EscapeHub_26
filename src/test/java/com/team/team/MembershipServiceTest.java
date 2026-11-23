@@ -84,6 +84,7 @@ class MembershipServiceTest {
     }
 
     
+    @Test
     void joinWhenAlreadyMemberThrowsConflict() {
         Team team = new Team();
         ReflectionTestUtils.setField(team, "id", 10L);
