@@ -83,8 +83,8 @@ class MembershipServiceLeaveTest {
     void leave_throwsForbidden_whenUserIsNotMember() {
         Long teamId = 10L;
         User outsider = mock(User.class);
-        when(outsider.getId()).thenReturn(3L);
 
+        
         when(teamRepository.existsById(teamId)).thenReturn(true);
         when(currentUserService.getCurrentUser()).thenReturn(outsider);
         when(teamMemberRepository.findByTeamId(teamId)).thenReturn(List.of());
