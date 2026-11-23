@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
@@ -36,6 +38,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                         .anyRequest().authenticated());
         return http.build();
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     // 401 στην κοινή μορφή σφάλματος (ErrorResponse). Το GlobalExceptionHandler δεν φτάνει
