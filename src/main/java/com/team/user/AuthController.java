@@ -13,15 +13,17 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -34,7 +36,7 @@ public class AuthController {
         this.userRepository = userRepository;
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                    HttpServletRequest httpRequest,
                                    HttpServletResponse httpResponse) {
@@ -59,5 +61,21 @@ public class AuthController {
         User user = userRepository.findByEmailIgnoreCase(authentication.getName())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
         return ResponseEntity.ok(UserResponse.from(user));
+    }
+
+    @PostMapping("/auth/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request,
+                                       HttpServletResponse response,
+                                       Authentication authentication) {
+        new SecurityContextLogoutHandler().logout(request, response, authentication);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Τα δύο paths ισχύουν προσωρινά, μέχρι να αποφασίσει η ομάδα (issue #50 vs openapi.yaml)
+    @GetMapping({"/auth/me", "/users/me"})
+    public UserResponse me(Authentication authentication) {
+        User user = userRepository.findByEmailIgnoreCase(authentication.getName())
+                .orElseThrow(() -> new IllegalStateException("Authenticated user not found"));
+        return UserResponse.from(user);
     }
 }
