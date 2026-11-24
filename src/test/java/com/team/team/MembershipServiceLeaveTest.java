@@ -98,4 +98,4 @@ class MembershipServiceLeaveTest {
         assertThrows(ForbiddenException.class, () -> membershipService.leave(teamId));
     }
 
-    
+    }
