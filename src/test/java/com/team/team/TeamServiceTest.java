@@ -1,7 +1,10 @@
 package com.team.team;
 
+import com.team.common.error.ForbiddenException;
+import com.team.common.error.NotFoundException;
 import com.team.user.CurrentUserService;
 import com.team.user.User;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,25 +12,26 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import com.team.common.error.ForbiddenException;
-import com.team.common.error.NotFoundException;
-import org.springframework.test.util.ReflectionTestUtils;
-import java.util.List;
-import java.util.Optional;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class TeamServiceTest {
@@ -44,6 +48,9 @@ class TeamServiceTest {
     @Mock
     private InviteCodeGenerator inviteCodeGenerator;
 
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     private TeamService teamService;
     private User currentUser;
 
@@ -53,18 +60,45 @@ class TeamServiceTest {
                 teamRepository,
                 teamMemberRepository,
                 currentUserService,
-                inviteCodeGenerator
+                inviteCodeGenerator,
+                transactionTemplate
         );
         currentUser = mock(User.class);
         lenient().when(currentUser.getId()).thenReturn(7L);
         lenient().when(currentUserService.getCurrentUser()).thenReturn(currentUser);
         lenient().when(currentUserService.getCurrentUserId()).thenReturn(7L);
+        // Το TransactionTemplate εκτελεί απλώς το callback (χωρίς πραγματική transaction)
+        lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(mock(TransactionStatus.class));
+        });
+    }
+
+    private DataIntegrityViolationException violationOf(String constraintName) {
+        ConstraintViolationException cause = mock(ConstraintViolationException.class);
+        when(cause.getConstraintName()).thenReturn(constraintName);
+        return new DataIntegrityViolationException("constraint violation", cause);
+    }
+
+    private Team teamWithId(Long id, String name, String inviteCode) {
+        Team team = new Team();
+        ReflectionTestUtils.setField(team, "id", id);
+        team.setName(name);
+        team.setInviteCode(inviteCode);
+        return team;
+    }
+
+    private TeamMember membership(Team team, TeamRole role) {
+        TeamMember member = new TeamMember();
+        member.setTeam(team);
+        member.setUser(currentUser);
+        member.setRole(role);
+        return member;
     }
 
     @Test
     void createTeam_createsTeamAndAssignsCreatorAsOwner() {
         when(inviteCodeGenerator.generate()).thenReturn("ABCD2345");
-        when(teamRepository.existsByInviteCode("ABCD2345")).thenReturn(false);
         when(teamRepository.saveAndFlush(any(Team.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TeamResponse response = teamService.createTeam(new CreateTeamRequest("  Escape Masters  "));
@@ -82,56 +116,55 @@ class TeamServiceTest {
 
     @Test
     void createTeam_retriesWhenInviteCodeCollides() {
+        DataIntegrityViolationException collision = violationOf("uq_teams_invite_code");
         when(inviteCodeGenerator.generate()).thenReturn("DUP12345", "NEW98765");
-        when(teamRepository.existsByInviteCode("DUP12345")).thenReturn(true);
-        when(teamRepository.existsByInviteCode("NEW98765")).thenReturn(false);
-        when(teamRepository.saveAndFlush(any(Team.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(teamRepository.saveAndFlush(any(Team.class)))
+                .thenThrow(collision)
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         TeamResponse response = teamService.createTeam(new CreateTeamRequest("Puzzle Squad"));
 
         assertEquals("NEW98765", response.inviteCode());
         verify(inviteCodeGenerator, times(2)).generate();
+        verify(teamMemberRepository, times(1)).save(any(TeamMember.class));
     }
 
     @Test
-    void createTeam_whenSavingOwnerFails_throwsAndDoesNotReturnTeamResponse() {
+    void createTeam_whenAllRetriesCollide_throwsDataIntegrityViolationException() {
+        DataIntegrityViolationException collision = violationOf("uq_teams_invite_code");
+        when(inviteCodeGenerator.generate()).thenReturn("SAME1234");
+        when(teamRepository.saveAndFlush(any(Team.class))).thenThrow(collision);
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> teamService.createTeam(new CreateTeamRequest("Retry Limit Team")));
+
+        verify(inviteCodeGenerator, times(10)).generate();
+        verify(teamMemberRepository, never()).save(any());
+    }
+
+    @Test
+    void createTeam_whenOtherConstraintFails_throwsWithoutRetry() {
+        DataIntegrityViolationException other = violationOf("some_other_constraint");
         when(inviteCodeGenerator.generate()).thenReturn("ABCD2345");
-        when(teamRepository.existsByInviteCode("ABCD2345")).thenReturn(false);
+        when(teamRepository.saveAndFlush(any(Team.class))).thenThrow(other);
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> teamService.createTeam(new CreateTeamRequest("Other Constraint")));
+
+        verify(inviteCodeGenerator, times(1)).generate();
+    }
+
+    @Test
+    void createTeam_whenSavingOwnerFails_throwsWithoutRetry() {
+        when(inviteCodeGenerator.generate()).thenReturn("ABCD2345");
         when(teamRepository.saveAndFlush(any(Team.class))).thenAnswer(invocation -> invocation.getArgument(0));
         doThrow(new DataIntegrityViolationException("DB error"))
                 .when(teamMemberRepository).save(any(TeamMember.class));
 
         assertThrows(DataIntegrityViolationException.class,
                 () -> teamService.createTeam(new CreateTeamRequest("Rollback Team")));
-    }
 
-    @Test
-    void createTeam_whenAllRetriesFail_throwsDataIntegrityViolationException() {
-        when(inviteCodeGenerator.generate()).thenReturn("SAME1234");
-        when(teamRepository.existsByInviteCode("SAME1234")).thenReturn(false);
-        when(teamRepository.saveAndFlush(any(Team.class)))
-                .thenThrow(new DataIntegrityViolationException("Unique constraint"));
-
-        assertThrows(DataIntegrityViolationException.class,
-                () -> teamService.createTeam(new CreateTeamRequest("Retry Limit Team")));
-
-        verify(teamMemberRepository, never()).save(any());
-    }
-
-    private Team teamWithId(Long id, String name, String inviteCode) {
-        Team team = new Team();
-        ReflectionTestUtils.setField(team, "id", id);
-        team.setName(name);
-        team.setInviteCode(inviteCode);
-        return team;
-    }
-
-    private TeamMember membership(Team team, TeamRole role) {
-        TeamMember member = new TeamMember();
-        member.setTeam(team);
-        member.setUser(currentUser);
-        member.setRole(role);
-        return member;
+        verify(inviteCodeGenerator, times(1)).generate();
     }
 
     @Test

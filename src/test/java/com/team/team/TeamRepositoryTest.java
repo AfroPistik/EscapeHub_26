@@ -1,7 +1,5 @@
 package com.team.team;
 
-import com.team.team.Team;
-import com.team.team.TeamRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -32,6 +30,12 @@ class TeamRepositoryTest {
         assertTrue(teams.findByInviteCode("ABCD2345").isPresent());
         assertTrue(teams.existsByInviteCode("ABCD2345"));
         assertFalse(teams.existsByInviteCode("ZZZZ9999"));
+    }
+
+    @Test
+    void createdAtIsGeneratedByDatabaseOnInsert() {
+        Team saved = teams.saveAndFlush(newTeam("Team A", "ABCD2345"));
+        assertNotNull(saved.getCreatedAt());
     }
 
     private Team newTeam(String name, String inviteCode) {
