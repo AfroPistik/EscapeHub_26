@@ -1,6 +1,7 @@
 package com.team.team;
 
 import com.team.IntegrationTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,6 +22,14 @@ class TeamCreationIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    // Το IntegrationTestBase καθαρίζει μόνο ΠΡΙΝ από κάθε test. Εδώ καθαρίζουμε και ΜΕΤΑ,
+    // ώστε οι χρήστες/ομάδες αυτών των tests να μη μένουν στη βάση και να μη χαλούν
+    // άλλα tests που τρέχουν αργότερα (π.χ. TeamMemberRepositoryTest με username "alice").
+    @AfterEach
+    void cleanUpAfterTest() {
+        jdbcTemplate.execute("TRUNCATE team_members, teams, users RESTART IDENTITY CASCADE");
+    }
 
     private MockHttpSession loggedInUser() throws Exception {
         registerUser("alice@example.com", "alice", "password123");
