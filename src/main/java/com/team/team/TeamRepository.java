@@ -8,5 +8,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     Optional<Team> findByInviteCode(String inviteCode);
 
+    Optional<Team> findByInviteCodeIgnoreCase(String inviteCode);
+
     boolean existsByInviteCode(String inviteCode);
 }
