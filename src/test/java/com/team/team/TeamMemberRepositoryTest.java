@@ -55,6 +55,13 @@ class TeamMemberRepositoryTest {
                 () -> members.saveAndFlush(member(team, bob, TeamRole.OWNER)));
     }
 
+    @Test
+    void joinedAtIsGeneratedByDatabaseOnInsert() {
+        Team team = saveTeam("ABCD2345");
+        TeamMember saved = members.saveAndFlush(member(team, saveUser("alice"), TeamRole.OWNER));
+        assertNotNull(saved.getJoinedAt());
+    }
+
     private Team saveTeam(String code) {
         Team t = new Team();
         t.setName("Team " + code);
