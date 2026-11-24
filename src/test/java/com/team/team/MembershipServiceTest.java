@@ -83,6 +83,7 @@ class MembershipServiceTest {
         assertThrows(NotFoundException.class, () -> membershipService.join("INVALID"));
     }
 
+    
     @Test
     void joinWhenAlreadyMemberThrowsConflict() {
         Team team = new Team();

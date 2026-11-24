@@ -77,4 +77,25 @@ public class MembershipService {
                 .map(TeamMemberResponse::from)
                 .toList();
     }
+
+    @Transactional
+    public void leave(Long teamId) {
+        if (!teamRepository.existsById(teamId)) {
+            throw new NotFoundException(ErrorCode.TEAM_NOT_FOUND, "Team not found");
+        }
+
+        User user = currentUserService.getCurrentUser();
+
+        TeamMember member = teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .filter(m -> m.getUser().getId().equals(user.getId()))
+                .findFirst()
+                .orElseThrow(() -> new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team"));
+
+        if (member.getRole() == TeamRole.OWNER) {
+            throw new ConflictException(ErrorCode.OWNER_CANNOT_LEAVE, "Owner cannot leave the team");
+        }
+
+        teamMemberRepository.delete(member);
+    }
 }
