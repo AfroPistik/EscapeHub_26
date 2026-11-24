@@ -1,11 +1,17 @@
 package com.team.team;
 
+import com.team.common.error.ErrorCode;
+import com.team.common.error.ForbiddenException;
+import com.team.common.error.NotFoundException;
 import com.team.user.CurrentUserService;
 import com.team.user.User;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.List;
 
 @Service
 public class TeamService {
@@ -46,6 +52,27 @@ public class TeamService {
                 }
             }
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyTeamResponse> getMyTeams() {
+        Long userId = currentUserService.getCurrentUserId();
+        return teamMemberRepository.findByUserId(userId).stream()
+                .map(MyTeamResponse::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TeamResponse getTeam(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.TEAM_NOT_FOUND, "Team not found"));
+
+        Long userId = currentUserService.getCurrentUserId();
+        if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, userId)) {
+            throw new ForbiddenException(ErrorCode.NOT_A_MEMBER, "You are not a member of this team");
+        }
+
+        return TeamResponse.from(team);
     }
 
     private TeamResponse saveTeamWithOwner(String name, User owner) {
