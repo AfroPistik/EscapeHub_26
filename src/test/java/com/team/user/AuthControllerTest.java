@@ -150,10 +150,17 @@ class AuthControllerTest {
             return new DatabaseUserDetailsService(userRepository);
         }
 
+        // Ψεύτικο UserService: τα tests του login δεν χρησιμοποιούν το register
+        @Bean
+        UserService userService() {
+            return mock(UserService.class);
+        }
+
         @Bean
         AuthController authController(AuthenticationManager authenticationManager,
-                                      UserRepository userRepository) {
-            return new AuthController(authenticationManager, userRepository);
+                                      UserRepository userRepository,
+                                      UserService userService) {
+            return new AuthController(authenticationManager, userRepository, userService);
         }
     }
 }

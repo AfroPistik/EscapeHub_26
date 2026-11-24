@@ -28,12 +28,22 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
+    private final UserService userService;
     private final SecurityContextRepository securityContextRepository =
             new HttpSessionSecurityContextRepository();
 
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository) {
+    public AuthController(AuthenticationManager authenticationManager,
+                          UserRepository userRepository,
+                          UserService userService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
+        this.userService = userService;
+    }
+
+    @PostMapping("/auth/register")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        User user = userService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user));
     }
 
     @PostMapping("/auth/login")
