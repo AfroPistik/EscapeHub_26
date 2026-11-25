@@ -1,0 +1,23 @@
+import { Link } from 'react-router-dom'
+
+interface EmptyTeamsStateProps {
+  onFocusCreate?: () => void
+}
+
+export function EmptyTeamsState({ onFocusCreate }: EmptyTeamsStateProps) {
+  return (
+    <section aria-label="Δεν υπάρχουν ομάδες">
+      <h2>Δεν έχετε ακόμη ομάδες</h2>
+      <p>
+        Δημιουργήστε τη δική σας ομάδα Escape Room για να καλέσετε συμπαίκτες ή μπείτε σε μια
+        υπάρχουσα με κωδικό πρόσκλησης.
+      </p>
+      <div>
+        <button type="button" onClick={onFocusCreate}>
+          Δημιουργία νέας ομάδας
+        </button>
+        <Link to="/teams/join">Ένταξη με κωδικό πρόσκλησης</Link>
+      </div>
+    </section>
+  )
+}
