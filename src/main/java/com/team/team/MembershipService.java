@@ -3,6 +3,7 @@ package com.team.team;
 
 import com.team.common.error.ConflictException;
 import com.team.common.error.ErrorCode;
+import com.team.common.error.ForbiddenException;
 import com.team.common.error.NotFoundException;
 import com.team.user.CurrentUserService;
 import com.team.user.User;
@@ -57,5 +58,44 @@ public class MembershipService {
                 .toList();
 
         return new TeamResponse(team.getId(), team.getName(), team.getInviteCode(), members);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TeamMemberResponse> getMembers(Long teamId) {
+        if (!teamRepository.existsById(teamId)) {
+            throw new NotFoundException(ErrorCode.TEAM_NOT_FOUND, "Team not found");
+        }
+
+        User user = currentUserService.getCurrentUser();
+
+        if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, user.getId())) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team");
+        }
+
+        return teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .map(TeamMemberResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public void leave(Long teamId) {
+        if (!teamRepository.existsById(teamId)) {
+            throw new NotFoundException(ErrorCode.TEAM_NOT_FOUND, "Team not found");
+        }
+
+        User user = currentUserService.getCurrentUser();
+
+        TeamMember member = teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .filter(m -> m.getUser().getId().equals(user.getId()))
+                .findFirst()
+                .orElseThrow(() -> new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team"));
+
+        if (member.getRole() == TeamRole.OWNER) {
+            throw new ConflictException(ErrorCode.OWNER_CANNOT_LEAVE, "Owner cannot leave the team");
+        }
+
+        teamMemberRepository.delete(member);
     }
 }

@@ -8,12 +8,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 @Configuration
 public class SecurityConfig {
 
@@ -21,14 +24,12 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(Customizer.withDefaults())
-
                 // ΑΠΟΦΑΣΗ CSRF: απενεργοποιημένο προς το παρόν (Sprint 1).
-// Γιατί: το API καταναλώνεται από ξεχωριστό frontend και το project είναι ακόμα σε φάση demo.
-// Κίνδυνος: η ταυτοποίηση γίνεται με session cookie (JSESSIONID), άρα ένα ξένο site θα
-// μπορούσε να στείλει αίτημα εκ μέρους συνδεδεμένου χρήστη.
-// Επόμενο βήμα πριν από πραγματική χρήση: ρύθμιση SameSite στο session cookie
-// ή ενεργοποίηση CSRF token. Να επανεξεταστεί από την ομάδα.
-
+                // Γιατί: το API καταναλώνεται από ξεχωριστό frontend και το project είναι ακόμα σε φάση demo.
+                // Κίνδυνος: η ταυτοποίηση γίνεται με session cookie (JSESSIONID), άρα ένα ξένο site θα
+                // μπορούσε να στείλει αίτημα εκ μέρους συνδεδεμένου χρήστη.
+                // Επόμενο βήμα πριν από πραγματική χρήση: ρύθμιση SameSite στο session cookie
+                // ή ενεργοποίηση CSRF token. Να επανεξεταστεί από την ομάδα.
                 .csrf(csrf -> csrf.disable())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedEntryPoint()))
                 .authorizeHttpRequests(auth -> auth
@@ -38,6 +39,14 @@ public class SecurityConfig {
         return http.build();
     }
 
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
     // 401 στην κοινή μορφή σφάλματος (ErrorResponse). Το GlobalExceptionHandler δεν φτάνει
     // εδώ, γιατί το σφάλμα προκύπτει μέσα στα φίλτρα ασφαλείας.
     private AuthenticationEntryPoint unauthorizedEntryPoint() {

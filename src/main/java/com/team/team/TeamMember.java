@@ -2,6 +2,8 @@ package com.team.team;
 
 import com.team.user.User;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 import java.time.Instant;
 
@@ -17,6 +19,7 @@ public class TeamMember {
     private User user;
     @Enumerated(EnumType.STRING) @Column(nullable = false)
     private TeamRole role;
+    @Generated(event = EventType.INSERT)
     @Column(name = "joined_at", nullable = false, insertable = false, updatable = false)
     private Instant joinedAt;
     public Long getId() { return id; }
