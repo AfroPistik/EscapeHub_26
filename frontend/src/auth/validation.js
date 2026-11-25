@@ -9,8 +9,5 @@ export function validateRegister({ email, username, password }) {
     if (password.length < 8) {
         fieldErrors.password = 'Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες'
     }
-    if (Object.keys(fieldErrors).length) {
-        return fail(res, 400, 'VALIDATION_ERROR', 'Μη έγκυρα δεδομένα', fieldErrors)
-    }
+    return fieldErrors
 }
-

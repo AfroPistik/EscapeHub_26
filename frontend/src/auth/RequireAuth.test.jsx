@@ -1,10 +1,12 @@
+import { test, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import RequireAuth from './RequireAuth'
-import * as AuthModule from './AuthContext'
+import { useAuth } from './AuthContext'
 
-const renderAt = (authValue) => {
-    vi.spyOn(AuthModule, 'useAuth').mockReturnValue(authValue)
+vi.mock('./AuthContext', () => ({ useAuth: vi.fn() }))
+
+function renderGuard() {
     render(
         <MemoryRouter initialEntries={['/teams']}>
             <Routes>
@@ -16,10 +18,19 @@ const renderAt = (authValue) => {
 }
 
 test('χωρίς session ανακατευθύνει στο /login', () => {
-    renderAt({ user: null, loading: false })
+    useAuth.mockReturnValue({ user: null, loading: false })
+    renderGuard()
     expect(screen.getByText('login page')).toBeInTheDocument()
 })
+
 test('με session δείχνει τη σελίδα', () => {
-    renderAt({ user: { id: 1 }, loading: false })
+    useAuth.mockReturnValue({ user: { id: 1 }, loading: false })
+    renderGuard()
     expect(screen.getByText('secret')).toBeInTheDocument()
+})
+
+test('όσο φορτώνει δεν ανακατευθύνει', () => {
+    useAuth.mockReturnValue({ user: null, loading: true })
+    renderGuard()
+    expect(screen.queryByText('login page')).not.toBeInTheDocument()
 })

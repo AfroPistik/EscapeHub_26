@@ -1,22 +1,43 @@
+import { test, expect, vi, afterEach } from 'vitest'
 import { api, setUnauthorizedHandler, ApiError } from './client'
 
-describe('API Client - 401 Unauthorized handling', () => {
-    beforeEach(() => {
-        vi.restoreAllMocks()
-    })
+afterEach(() => vi.unstubAllGlobals())
 
-    test('καλεί τον unauthorized handler και πετάει ApiError όταν λαμβάνει 401 χωρίς skip401', async () => {
-        const handler = vi.fn()
-        setUnauthorizedHandler(handler)
+function mockFetch(status, body) {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        status,
+        ok: status >= 200 && status < 300,
+        json: () => Promise.resolve(body),
+    }))
+}
 
-        // Mock global fetch να επιστρέφει status 401
-        global.fetch = vi.fn().mockResolvedValue({
-            status: 401,
-            ok: false,
-            json: async () => ({ message: 'Unauthorized', code: 'UNAUTHORIZED' }),
-        })
+test('το 401 καλεί τον handler λήξης session', async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    mockFetch(401, { code: 'UNAUTHORIZED', message: 'Απαιτείται σύνδεση', fieldErrors: {} })
 
-        await expect(api.get('/users/me')).rejects.toThrow(ApiError)
-        expect(handler).toHaveBeenCalledTimes(1)
-    })
+    await expect(api.get('/teams/mine')).rejects.toBeInstanceOf(ApiError)
+    expect(handler).toHaveBeenCalledTimes(1)
+})
+
+test('με skip401 ο handler δεν καλείται', async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    mockFetch(401, { code: 'UNAUTHORIZED', message: 'Απαιτείται σύνδεση', fieldErrors: {} })
+
+    await expect(api.get('/users/me', { skip401: true })).rejects.toBeInstanceOf(ApiError)
+    expect(handler).not.toHaveBeenCalled()
+})
+
+test('το 400 δίνει fieldErrors ως object', async () => {
+    mockFetch(400, { code: 'VALIDATION_ERROR', message: 'Μη έγκυρα δεδομένα', fieldErrors: { email: 'Μη έγκυρο email' } })
+
+    const err = await api.post('/auth/register', {}).catch(e => e)
+    expect(err.status).toBe(400)
+    expect(err.fieldErrors).toEqual({ email: 'Μη έγκυρο email' })
+})
+
+test('το 204 επιστρέφει null', async () => {
+    mockFetch(204, null)
+    await expect(api.post('/auth/logout')).resolves.toBeNull()
 })

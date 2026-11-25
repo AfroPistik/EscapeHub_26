@@ -1,14 +1,20 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { api, setUnauthorizedHandler } from '../api/client'
 
 const AuthContext = createContext(null)
-
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext)
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [sessionExpired, setSessionExpired] = useState(false)
+    const userRef = useRef(null)
+
+    // Κρατά πάντα την τρέχουσα τιμή του χρήστη για τον handler του 401
+    useEffect(() => {
+        userRef.current = user
+    }, [user])
 
     useEffect(() => {
         api.get('/users/me', { skip401: true })
@@ -17,10 +23,8 @@ export function AuthProvider({ children }) {
             .finally(() => setLoading(false))
 
         setUnauthorizedHandler(() => {
-            setUser(prev => {
-                if (prev) setSessionExpired(true) // μήνυμα μόνο αν ήταν συνδεδεμένος
-                return null
-            })
+            if (userRef.current) setSessionExpired(true) // μήνυμα μόνο αν ήταν συνδεδεμένος
+            setUser(null)
         })
     }, [])
 
