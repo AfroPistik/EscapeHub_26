@@ -1,21 +1,18 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, teamsApi } from '../api/teamsApi'
+import { ApiError } from '../api/client'
+import { teamsApi } from '../api/teamsApi'
 import { MyTeamsPage } from './MyTeamsPage'
 import { TeamDetailPage } from './TeamDetailPage'
 
-vi.mock('../api/teamsApi', async importOriginal => {
-  const actual = await importOriginal()
-  return {
-    ...actual,
-    teamsApi: {
-      getMyTeams: vi.fn(),
-      createTeam: vi.fn(),
-      getTeamById: vi.fn(),
-    },
-  }
-})
+vi.mock('../api/teamsApi', () => ({
+  teamsApi: {
+    getMyTeams: vi.fn(),
+    createTeam: vi.fn(),
+    getTeamById: vi.fn(),
+  },
+}))
 
 function renderWithRouter(initialEntries = ['/teams']) {
   return render(
@@ -54,6 +51,8 @@ describe('MyTeamsPage', () => {
 
     expect(await screen.findByText(/Δεν έχετε ακόμη ομάδες/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Ένταξη με κωδικό πρόσκλησης/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/Όνομα ομάδας/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Δημιουργία ομάδας/i })).toBeInTheDocument()
   })
 
   it('εμφανίζει μήνυμα σφάλματος όταν αποτύχει η φόρτωση της λίστας ομάδων', async () => {
@@ -153,13 +152,13 @@ describe('MyTeamsPage', () => {
       id: 42,
       name: 'Room 42 Escape',
       inviteCode: 'XK92LP4M',
-      role: 'OWNER',
+      createdAt: '2026-01-01T00:00:00Z',
     })
     vi.mocked(teamsApi.getTeamById).mockResolvedValue({
       id: 42,
       name: 'Room 42 Escape',
       inviteCode: 'XK92LP4M',
-      role: 'OWNER',
+      createdAt: '2026-01-01T00:00:00Z',
     })
 
     renderWithRouter()
