@@ -1,0 +1,21 @@
+export async function joinGroupByInviteCode(inviteCode) {
+  const response = await fetch('/api/groups/join', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ inviteCode: inviteCode.trim() }),
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Ο κωδικός πρόσκλησης είναι άκυρος ή δεν βρέθηκε ομάδα.');
+    }
+    if (response.status === 409) {
+      throw new Error('Είστε ήδη μέλος αυτής της ομάδας.');
+    }
+    throw new Error('Προέκυψε ένα απρόσμενο σφάλμα. Δοκιμάστε ξανά.');
+  }
+
+  return response.json(); // Αναμένεται να επιστρέφει π.χ. { groupId: '123', ... }
+}
