@@ -90,7 +90,7 @@ public class TeamService {
         ownerMembership.setTeam(savedTeam);
         ownerMembership.setUser(owner);
         ownerMembership.setRole(TeamRole.OWNER);
-        teamMemberRepository.saveAndFlush(ownerMembership);
+        teamMemberRepository.save(ownerMembership);
 
         List<TeamMemberResponse> members = teamMemberRepository.findByTeamId(savedTeam.getId()).stream()
                 .map(TeamMemberResponse::from)
