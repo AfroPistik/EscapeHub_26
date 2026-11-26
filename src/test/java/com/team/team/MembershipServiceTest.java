@@ -116,3 +116,4 @@ class MembershipServiceTest {
         assertThrows(ConflictException.class, () -> membershipService.join("ABCD2345"));
     }
 }
+
