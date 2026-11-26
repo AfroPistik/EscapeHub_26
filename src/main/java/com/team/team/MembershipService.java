@@ -1,3 +1,4 @@
+
 package com.team.team;
 
 import com.team.common.error.ConflictException;
@@ -56,7 +57,7 @@ public class MembershipService {
                 .map(TeamMemberResponse::from)
                 .toList();
 
-        return new TeamResponse(team.getId(), team.getName(), team.getInviteCode(), members);
+        return TeamResponse.from(team, members);
     }
 
     @Transactional(readOnly = true)
@@ -68,7 +69,7 @@ public class MembershipService {
         User user = currentUserService.getCurrentUser();
 
         if (!teamMemberRepository.existsByTeamIdAndUserId(teamId, user.getId())) {
-            throw new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team");
+            throw new ForbiddenException(ErrorCode.NOT_A_MEMBER, "User is not a member of this team");
         }
 
         return teamMemberRepository.findByTeamId(teamId)
@@ -89,7 +90,7 @@ public class MembershipService {
                 .stream()
                 .filter(m -> m.getUser().getId().equals(user.getId()))
                 .findFirst()
-                .orElseThrow(() -> new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team"));
+                .orElseThrow(() -> new ForbiddenException(ErrorCode.NOT_A_MEMBER, "User is not a member of this team"));
 
         if (member.getRole() == TeamRole.OWNER) {
             throw new ConflictException(ErrorCode.OWNER_CANNOT_LEAVE, "Owner cannot leave the team");
@@ -107,7 +108,7 @@ public class MembershipService {
         User currentUser = currentUserService.getCurrentUser();
 
         TeamMember requesterMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
-                .orElseThrow(() -> new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team"));
+                .orElseThrow(() -> new ForbiddenException(ErrorCode.NOT_A_MEMBER, "User is not a member of this team"));
 
         if (requesterMembership.getRole() != TeamRole.OWNER) {
             throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only team owner can remove members");
