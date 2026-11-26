@@ -1,4 +1,3 @@
-
 package com.team.team;
 
 import jakarta.validation.Valid;
@@ -36,6 +35,12 @@ public class MembershipController {
     @DeleteMapping("/{id}/members/me")
     public ResponseEntity<Void> leave(@PathVariable Long id) {
         membershipService.leave(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/members/{userId}")
+    public ResponseEntity<Void> removeMember(@PathVariable Long id, @PathVariable Long userId) {
+        membershipService.removeMember(id, userId);
         return ResponseEntity.noContent().build();
     }
 }

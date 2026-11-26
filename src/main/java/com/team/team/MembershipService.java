@@ -1,4 +1,3 @@
-
 package com.team.team;
 
 import com.team.common.error.ConflictException;
@@ -97,5 +96,30 @@ public class MembershipService {
         }
 
         teamMemberRepository.delete(member);
+    }
+
+    @Transactional
+    public void removeMember(Long teamId, Long targetUserId) {
+        if (!teamRepository.existsById(teamId)) {
+            throw new NotFoundException(ErrorCode.TEAM_NOT_FOUND, "Team not found");
+        }
+
+        User currentUser = currentUserService.getCurrentUser();
+
+        TeamMember requesterMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, currentUser.getId())
+                .orElseThrow(() -> new ForbiddenException(ErrorCode.FORBIDDEN, "User is not a member of this team"));
+
+        if (requesterMembership.getRole() != TeamRole.OWNER) {
+            throw new ForbiddenException(ErrorCode.FORBIDDEN, "Only team owner can remove members");
+        }
+
+        if (currentUser.getId().equals(targetUserId)) {
+            throw new ConflictException(ErrorCode.OWNER_CANNOT_REMOVE_SELF, "Owner cannot remove themselves from the team");
+        }
+
+        TeamMember targetMembership = teamMemberRepository.findByTeamIdAndUserId(teamId, targetUserId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.NOT_A_MEMBER, "User is not a member of this team"));
+
+        teamMemberRepository.delete(targetMembership);
     }
 }
