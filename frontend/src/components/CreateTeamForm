@@ -1,0 +1,85 @@
+import { useState } from 'react'
+import { ApiError, teamsApi } from '../api/teamsApi'
+
+export function CreateTeamForm({ onCreated }) {
+  const [name, setName] = useState('')
+  const [fieldError, setFieldError] = useState(null)
+  const [serverError, setServerError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  function validateName(value) {
+    const trimmed = value.trim()
+    if (trimmed.length < 3 || trimmed.length > 50) {
+      return 'Το όνομα ομάδας πρέπει να περιέχει από 3 έως 50 χαρακτήρες.'
+    }
+    return null
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setFieldError(null)
+    setServerError(null)
+
+    const clientValidation = validateName(name)
+    if (clientValidation) {
+      setFieldError(clientValidation)
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const created = await teamsApi.createTeam(name.trim())
+      setName('')
+      onCreated(created)
+    } catch (err) {
+      if (err instanceof ApiError) {
+        if (err.fieldErrors?.name) {
+          setFieldError(err.fieldErrors.name)
+        }
+        setServerError(err.message)
+      } else {
+        setServerError('Αδυναμία σύνδεσης με τον διακομιστή.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} noValidate aria-label="Φόρμα δημιουργίας ομάδας">
+      <div>
+        <label htmlFor="team-name">Όνομα ομάδας</label>
+        <input
+          id="team-name"
+          name="name"
+          type="text"
+          value={name}
+          placeholder="π.χ. Escape Masters"
+          onChange={e => {
+            setName(e.target.value)
+            if (fieldError) setFieldError(null)
+          }}
+          aria-invalid={Boolean(fieldError)}
+          aria-describedby={fieldError ? 'team-name-error' : undefined}
+        />
+        <small>{name.trim().length}/50</small>
+      </div>
+
+      {fieldError && (
+        <p id="team-name-error" role="alert">
+          {fieldError}
+        </p>
+      )}
+
+      {serverError && !fieldError && (
+        <p role="alert">
+          {serverError}
+        </p>
+      )}
+
+      <button type="submit" disabled={submitting}>
+        {submitting ? 'Δημιουργία...' : 'Δημιουργία ομάδας'}
+      </button>
+    </form>
+  )
+}
