@@ -14,14 +14,13 @@ function getGreekErrorMessage(err) {
   return 'Αδυναμία φόρτωσης ομάδας'
 }
 
-export function TeamDetailPage() {
+export default function TeamDetailPage() {
   const { id } = useParams()
   const [team, setTeam] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!id) return
     let active = true
     setLoading(true)
     teamsApi
