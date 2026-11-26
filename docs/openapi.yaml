@@ -87,6 +87,10 @@ components:
           enum:
             - OWNER
             - MEMBER
+      
+        joinedAt:
+          type: string
+          format: date-time    
 
     TeamResponse:
       type: object
