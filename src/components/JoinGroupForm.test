@@ -1,0 +1,99 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { JoinGroupForm } from './JoinGroupForm';
+
+// Mock του useNavigate
+const mockNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}));
+
+describe('JoinGroupForm', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    global.fetch = jest.fn();
+  });
+
+  test('δεν επιτρέπει κενή υποβολή και εμφανίζει μήνυμα σφάλματος', async () => {
+    render(
+      <MemoryRouter>
+        <JoinGroupForm />
+      </MemoryRouter>
+    );
+
+    const submitButton = screen.getByRole('button', { name: /είσοδος στην ομάδα/i });
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Παρακαλώ εισάγετε έναν κωδικό πρόσκλησης.'
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test('εμφανίζει κατανοητό μήνυμα για άκυρο κωδικό (404)', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+    });
+
+    render(
+      <MemoryRouter>
+        <JoinGroupForm />
+      </MemoryRouter>
+    );
+
+    const input = screen.getByLabelText(/κωδικός πρόσκλησης/i);
+    fireEvent.change(input, { target: { value: 'INVALID123' } });
+    fireEvent.click(screen.getByRole('button', { name: /είσοδος στην ομάδα/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Ο κωδικός πρόσκλησης είναι άκυρος ή δεν βρέθηκε ομάδα.'
+    );
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test('εμφανίζει κατανοητό μήνυμα όταν ο χρήστης είναι ήδη μέλος (409)', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+    });
+
+    render(
+      <MemoryRouter>
+        <JoinGroupForm />
+      </MemoryRouter>
+    );
+
+    const input = screen.getByLabelText(/κωδικός πρόσκλησης/i);
+    fireEvent.change(input, { target: { value: 'EXISTING123' } });
+    fireEvent.click(screen.getByRole('button', { name: /είσοδος στην ομάδα/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Είστε ήδη μέλος αυτής της ομάδας.'
+    );
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  test('ανακατευθύνει στη σελίδα της ομάδας σε επιτυχή ένταξη', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupId: 'group-42' }),
+    });
+
+    render(
+      <MemoryRouter>
+        <JoinGroupForm />
+      </MemoryRouter>
+    );
+
+    const input = screen.getByLabelText(/κωδικός πρόσκλησης/i);
+    fireEvent.change(input, { target: { value: 'VALID42' } });
+    fireEvent.click(screen.getByRole('button', { name: /είσοδος στην ομάδα/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/groups/group-42');
+    });
+  });
+});
