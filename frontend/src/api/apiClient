@@ -1,0 +1,24 @@
+// apiClient.js
+export const teamApiClient = {
+  async getTeam(teamId) {
+    const res = await fetch(`/api/teams/${teamId}`);
+    if (!res.ok) throw { status: res.status };
+    return res.json();
+  },
+
+  async removeMember(teamId, memberId) {
+    const res = await fetch(`/api/teams/${teamId}/members/${memberId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw { status: res.status };
+    return res.status === 204 ? null : res.json();
+  },
+
+  async leaveTeam(teamId) {
+    const res = await fetch(`/api/teams/${teamId}/leave`, {
+      method: 'POST',
+    });
+    if (!res.ok) throw { status: res.status };
+    return res.status === 204 ? null : res.json();
+  },
+};
