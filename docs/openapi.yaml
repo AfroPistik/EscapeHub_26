@@ -1,3 +1,4 @@
+
 openapi: 3.0.3
 info:
   title: EscapeHub API
@@ -73,6 +74,20 @@ components:
         inviteCode:
           type: string
 
+    TeamMemberResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        username:
+          type: string
+        role:
+          type: string
+          enum:
+            - OWNER
+            - MEMBER
+
     TeamResponse:
       type: object
       properties:
@@ -86,6 +101,10 @@ components:
         createdAt:
           type: string
           format: date-time
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMemberResponse'
 
     MyTeamResponse:
       type: object
@@ -112,6 +131,7 @@ components:
           type: string
           enum:
             - VALIDATION_ERROR
+            - METHOD_NOT_ALLOWED
             - UNAUTHORIZED
             - FORBIDDEN
             - NOT_FOUND
@@ -213,6 +233,26 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /auth/me:
+    get:
+      summary: Get current authenticated user profile
+      description: "Required access: Authenticated user"
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: Current user details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/me:
     get:
       summary: Get current authenticated user profile
       description: "Required access: Authenticated user"
@@ -397,8 +437,49 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /teams/{id}/leave:
-    post:
+  /teams/{id}/members:
+    get:
+      summary: List members of a specific team
+      description: "Required access: Team Member (OWNER or MEMBER)"
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: List of team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamMemberResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: User is not a member of this team
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Team not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /teams/{id}/members/me:
+    delete:
       summary: Leave a team
       description: "Required access: Team MEMBER (OWNER cannot leave without disbanding)"
       security:
@@ -484,3 +565,5 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+                
