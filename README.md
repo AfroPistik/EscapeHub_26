@@ -11,7 +11,7 @@
 - CI/CD: GitHub Actions, Docker
 
 ## Κατάσταση
-Sprint 1: εγγραφή και είσοδος χρηστών, δημιουργία ομάδων παικτών, ένταξη με invite code και διαχείριση μελών (backend και frontend).
+Sprint 1: εγγραφή και είσοδος χρηστών, δημιουργία ομάδων παικτών, ένταξη με invite code, λίστα μελών και αποχώρηση. Η αφαίρεση μέλους από τον OWNER δεν έχει υλοποιηθεί ακόμα. Δες το [CHANGELOG](CHANGELOG.md) και το [QA checklist](docs/qa-checklist.md).
 
 ## Ομάδα και διαδικασία
 - [Σύνθεση ομάδας και εναλλαγή Scrum Master](docs/team.md)
@@ -46,7 +46,7 @@ Sprint 1: εγγραφή και είσοδος χρηστών, δημιουργ�
 
 ## API
 
-Η πλήρης περιγραφή (αιτήματα, απαντήσεις, κωδικοί σφαλμάτων) βρίσκεται στο [`docs/openapi.yaml`](docs/openapi.yaml).
+Η περιγραφή της σύμβασης (αιτήματα, απαντήσεις, κωδικοί σφαλμάτων) βρίσκεται στο [`docs/openapi.yaml`](docs/openapi.yaml). Ο παρακάτω πίνακας δείχνει τα endpoints που υπάρχουν στον κώδικα. Οι διαφορές από το openapi καταγράφονται στα «Γνωστά θέματα» του [CHANGELOG](CHANGELOG.md).
 
 Η ταυτοποίηση γίνεται με session cookie (`JSESSIONID`). Τα σφάλματα επιστρέφονται σε κοινή μορφή `{ code, message, timestamp, fieldErrors }`.
 
@@ -55,16 +55,13 @@ Sprint 1: εγγραφή και είσοδος χρηστών, δημιουργ�
 | POST | `/api/auth/register` | Δημόσιο | Εγγραφή χρήστη |
 | POST | `/api/auth/login` | Δημόσιο | Είσοδος και δημιουργία session |
 | POST | `/api/auth/logout` | Συνδεδεμένος | Έξοδος |
-| GET | `/api/auth/me` | Συνδεδεμένος | Στοιχεία τρέχοντος χρήστη |
+| GET | `/api/auth/me` | Συνδεδεμένος | Στοιχεία τρέχοντος χρήστη (προσωρινά και ως `/api/users/me`) |
 | POST | `/api/teams` | Συνδεδεμένος | Δημιουργία ομάδας (ο δημιουργός γίνεται OWNER) |
-| GET | `/api/teams` | Συνδεδεμένος | Οι ομάδες μου |
+| GET | `/api/teams/mine` | Συνδεδεμένος | Οι ομάδες μου |
 | POST | `/api/teams/join` | Συνδεδεμένος | Ένταξη με invite code |
-| GET | `/api/teams/{id}` | Μέλος ομάδας | Λεπτομέρειες ομάδας και μέλη |
-| POST | `/api/teams/{id}/leave` | Μέλος (όχι OWNER) | Αποχώρηση από ομάδα |
-| DELETE | `/api/teams/{id}/members/{userId}` | OWNER | Αφαίρεση μέλους |
-| DELETE | `/api/teams/{id}` | OWNER | Διαγραφή (διάλυση) ομάδας |
-
-Η λίστα μελών της ομάδας (US-12) επιστρέφεται μέσα στην απάντηση του `GET /api/teams/{id}`.
+| GET | `/api/teams/{id}` | Μέλος ομάδας | Λεπτομέρειες ομάδας |
+| GET | `/api/teams/{id}/members` | Μέλος ομάδας | Λίστα μελών |
+| DELETE | `/api/teams/{id}/members/me` | Μέλος (όχι OWNER) | Αποχώρηση από ομάδα |
 
 ## Συνηθισμένα προβλήματα
 
@@ -73,4 +70,4 @@ Sprint 1: εγγραφή και είσοδος χρηστών, δημιουργ�
 | `Connection refused` ή η εφαρμογή δεν συνδέεται στη βάση | Η βάση δεν τρέχει. Ξεκίνα το container (`docker compose up -d`) ή την υπηρεσία `postgresql-x64-16` |
 | Το port 5432 είναι πιασμένο | Τρέχει ήδη άλλη Postgres ή container. Σταμάτα το (`docker compose stop`) |
 | `Migration checksum mismatch` | Σβήσε και ξαναφτιάξε τη βάση `escapehub` |
-| Σφάλμα Java έκδοσης | Χρειάζεται Java 21. Έλεγξε με `java -version` και το `JAVA_HOME` |
+| Σφάλμα Java έκδοσης ή `JAVA_HOME is not defined correctly` | Χρειάζεται Java 21. Έλεγξε με `java -version` και το `JAVA_HOME` |
