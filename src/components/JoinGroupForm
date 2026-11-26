@@ -1,0 +1,62 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { joinGroupByInviteCode } from '../services/groupService';
+
+export function JoinGroupForm() {
+  const [inviteCode, setInviteCode] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    const trimmedCode = inviteCode.trim();
+    if (!trimmedCode) {
+      setError('Παρακαλώ εισάγετε έναν κωδικό πρόσκλησης.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const data = await joinGroupByInviteCode(trimmedCode);
+      // Επιτυχής ένταξη -> ανακατεύθυνση στη σελίδα της ομάδας
+      navigate(`/groups/${data.groupId}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      <div>
+        <label htmlFor="invite-code">Κωδικός Πρόσκλησης</label>
+        <input
+          id="invite-code"
+          type="text"
+          value={inviteCode}
+          onChange={(e) => {
+            setInviteCode(e.target.value);
+            if (error) setError('');
+          }}
+          placeholder="π.χ. TEAM-2026"
+          disabled={isLoading}
+          required
+        />
+      </div>
+
+      {error && (
+        <div role="alert" style={{ color: 'red', marginTop: '8px' }}>
+          {error}
+        </div>
+      )}
+
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? 'Σύνδεση...' : 'Είσοδος στην ομάδα'}
+      </button>
+    </form>
+  );
+}
