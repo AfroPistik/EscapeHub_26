@@ -1,3 +1,4 @@
+
 package com.team.team;
 
 import com.team.common.error.ErrorCode;
@@ -72,7 +73,11 @@ public class TeamService {
             throw new ForbiddenException(ErrorCode.NOT_A_MEMBER, "You are not a member of this team");
         }
 
-        return TeamResponse.from(team);
+        List<TeamMemberResponse> members = teamMemberRepository.findByTeamId(teamId).stream()
+                .map(TeamMemberResponse::from)
+                .toList();
+
+        return TeamResponse.from(team, members);
     }
 
     private TeamResponse saveTeamWithOwner(String name, User owner) {
@@ -87,7 +92,11 @@ public class TeamService {
         ownerMembership.setRole(TeamRole.OWNER);
         teamMemberRepository.save(ownerMembership);
 
-        return TeamResponse.from(savedTeam);
+        List<TeamMemberResponse> members = teamMemberRepository.findByTeamId(savedTeam.getId()).stream()
+                .map(TeamMemberResponse::from)
+                .toList();
+
+        return TeamResponse.from(savedTeam, members);
     }
 
     private boolean isInviteCodeCollision(DataIntegrityViolationException ex) {

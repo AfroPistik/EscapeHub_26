@@ -1,3 +1,4 @@
+
 package com.team.common.error;
 
 import java.util.LinkedHashMap;
@@ -85,6 +86,7 @@ public class GlobalExceptionHandler {
             case 401 -> ErrorCode.UNAUTHORIZED;
             case 403 -> ErrorCode.FORBIDDEN;
             case 404 -> ErrorCode.NOT_FOUND;
+            case 405 -> ErrorCode.METHOD_NOT_ALLOWED;
             case 409 -> ErrorCode.CONFLICT;
             default -> ErrorCode.VALIDATION_ERROR;
         };

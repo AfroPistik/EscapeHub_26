@@ -1,3 +1,4 @@
+
 package com.team.common.error;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -91,6 +92,15 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
+    
+    @Test
+    void methodNotAllowedGives405() throws Exception {
+        mvc.perform(get("/t/bean"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+    
 
     @Test
     void unexpectedErrorGives500WithoutLeakingDetails() throws Exception {
@@ -136,6 +146,8 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/typed/{id}")
         void typed(@PathVariable Long id) { }
 
+
+        
         @GetMapping("/boom")
         void boom() {
             throw new IllegalStateException("secret db password");

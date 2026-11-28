@@ -1,8 +1,10 @@
+
 package com.team.common.error;
 
 public enum ErrorCode {
     // generic (same as the OpenAPI draft)
     VALIDATION_ERROR,
+    METHOD_NOT_ALLOWED,
     UNAUTHORIZED,
     FORBIDDEN,
     NOT_FOUND,
