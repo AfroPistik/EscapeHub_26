@@ -1,6 +1,7 @@
 
 package com.team.team;
 
+import com.team.common.error.ErrorCode;
 import com.team.common.error.ForbiddenException;
 import com.team.common.error.NotFoundException;
 import com.team.user.CurrentUserService;
@@ -13,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -78,6 +80,35 @@ class MembershipServiceMembersTest {
         when(currentUserService.getCurrentUser()).thenReturn(outsider);
         when(teamMemberRepository.existsByTeamIdAndUserId(teamId, 2L)).thenReturn(false);
 
-        assertThrows(ForbiddenException.class, () -> membershipService.getMembers(teamId));
+        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> membershipService.getMembers(teamId));
+        assertEquals(ErrorCode.NOT_A_MEMBER, ex.getCode());
+    }
+
+    @Test
+    void leave_throwsNotAMember_whenUserIsNotMember() {
+        Long teamId = 10L;
+        User outsider = mock(User.class);
+
+        when(teamRepository.existsById(teamId)).thenReturn(true);
+        when(currentUserService.getCurrentUser()).thenReturn(outsider);
+        when(teamMemberRepository.findByTeamId(teamId)).thenReturn(List.of());
+
+        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> membershipService.leave(teamId));
+        assertEquals(ErrorCode.NOT_A_MEMBER, ex.getCode());
+    }
+
+    @Test
+    void removeMember_throwsNotAMember_whenRequesterIsNotMember() {
+        Long teamId = 10L;
+        User outsider = mock(User.class);
+        when(outsider.getId()).thenReturn(2L);
+
+        when(teamRepository.existsById(teamId)).thenReturn(true);
+        when(currentUserService.getCurrentUser()).thenReturn(outsider);
+        when(teamMemberRepository.findByTeamIdAndUserId(teamId, 2L)).thenReturn(Optional.empty());
+
+        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> membershipService.removeMember(teamId, 3L));
+        assertEquals(ErrorCode.NOT_A_MEMBER, ex.getCode());
     }
 }
+
